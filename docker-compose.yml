@@ -7,11 +7,11 @@ services:
       POSTGRES_USER: gesta
       POSTGRES_PASSWORD: gesta
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gesta -d gesta"]
+      test: [ "CMD-SHELL", "pg_isready -U gesta -d gesta" ]
       interval: 5s
       timeout: 3s
       retries: 10

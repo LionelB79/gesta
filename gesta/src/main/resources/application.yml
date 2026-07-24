@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: gesta
+  datasource:
+    url: jdbc:postgresql://localhost:5433/gesta
+    username: gesta
+    password: gesta
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: 8080

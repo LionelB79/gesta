@@ -1,0 +1,1 @@
+-- Migration initiale, un schéma par module à venir
