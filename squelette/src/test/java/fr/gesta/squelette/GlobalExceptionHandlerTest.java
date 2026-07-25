@@ -1,6 +1,7 @@
 package fr.gesta.squelette;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -9,12 +10,20 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class GlobalExceptionHandlerTest {
+    private  GlobalExceptionHandler globalExceptionHandler;
+
+    @BeforeEach
+    void init() {
+        globalExceptionHandler = new GlobalExceptionHandler();
+
+    }
 
     @Test
     void handleApiExceptionTest() {
-        GlobalExceptionHandler globalExceptionHandler = new GlobalExceptionHandler();
+
         HttpServletRequest request = new MockHttpServletRequest("GET", "/api/test/boom");
         ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleApiException(new ApiException("erreur metier", HttpStatus.BAD_REQUEST, "BAD_REQUEST"), request);
 
@@ -28,7 +37,6 @@ public class GlobalExceptionHandlerTest {
 
     @Test
     void handleInternalExceptionTest() {
-        GlobalExceptionHandler globalExceptionHandler = new GlobalExceptionHandler();
         HttpServletRequest request = new MockHttpServletRequest("GET", "/api/test/boom");
         ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleInternalException(new RuntimeException("détail interne sensible"), request);
 
@@ -36,12 +44,12 @@ public class GlobalExceptionHandlerTest {
         assertEquals("INTERNAL_ERROR", response.getBody().code());
         assertEquals("Erreur inconnue",response.getBody().message());
         assertEquals("/api/test/boom",response.getBody().path());
+        assertFalse(response.getBody().message().contains("détail interne sensible"));
 
     }
 
     @Test
     void handleNotFoundExceptionTest() {
-        GlobalExceptionHandler globalExceptionHandler = new GlobalExceptionHandler();
         HttpServletRequest request = new MockHttpServletRequest("GET", "/api/test/inconnu");
         ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleNotFoundException(new NoResourceFoundException(HttpMethod.GET, "/api/test/inconnu", "test/inconnu"), request);
 
@@ -49,6 +57,5 @@ public class GlobalExceptionHandlerTest {
         assertEquals("NOT_FOUND", response.getBody().code());
         assertEquals("élément introuvable",response.getBody().message());
         assertEquals("/api/test/inconnu",response.getBody().path());
-
     }
 }

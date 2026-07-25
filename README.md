@@ -65,19 +65,21 @@ Ces règles sont **vérifiées à chaque build** : ArchUnit côté back, ESLint 
 gesta/
 ├── pom.xml                # parent : versions, plugins, dépendances communes
 ├── squelette/             # socle : exceptions, audit, génériques, constantes
-├── ref/                   # référentiels (items, liens)
-├── stocko/                # abstraction stockage S3
-├── resa/                  # réservation de salles
-├── materio/               # gestion du matériel
-├── odito/                 # modèles de documents
-├── staff/                 # consultation SQL cataloguée
 ├── gesta/                 # application : auth, accueil, sécurité, main
-├── front/                 # React (Vite), build embarqué dans le jar
-│   └── src/
-│       ├── app/           # router, providers, layout global
-│       ├── shared/        # ui/, api/, auth/, lib/ — le « squelette front »
-│       └── features/      # resa/, materio/, … un dossier par module
-└── docker-compose.yml     # PostgreSQL + MinIO (dev et démo)
+├── docker-compose.yml     # PostgreSQL + MinIO (dev et démo)
+│
+│   # modules planifiés, non encore créés :
+├── ref/                   # (à venir) référentiels (items, liens)
+├── stocko/                # (à venir) abstraction stockage S3
+├── resa/                  # (à venir) réservation de salles
+├── materio/               # (à venir) gestion du matériel
+├── odito/                 # (à venir) modèles de documents
+├── staff/                 # (à venir) consultation SQL cataloguée
+└── front/                 # (à venir) React (Vite), build embarqué dans le jar
+    └── src/
+        ├── app/           # router, providers, layout global
+        ├── shared/        # ui/, api/, auth/, lib/ — le « squelette front »
+        └── features/      # resa/, materio/, … un dossier par module
 ```
 
 Côté front, mêmes règles qu'au back : `features → shared` autorisé, `shared → features` interdit, `features ↔ features` interdit (la navigation croisée passe par le router dans `app/`).
@@ -85,7 +87,7 @@ Côté front, mêmes règles qu'au back : `features → shared` autorisé, `shar
 ### Données
 
 - Un seul PostgreSQL, **un schéma par module** (`gesta`, `resa`, …) : la frontière modulaire est visible jusqu'en base.
-- Migrations **Flyway** rangées par module.
+- Migrations **Liquibase** : un changelog par module, agrégés par un changelog maître dans `gesta`.
 - Fichiers : API S3 consommée via `stocko`. MinIO en local et en démo ; le même code fonctionne sur un vrai bucket S3 sans modification.
 
 ### Sécurité
@@ -96,22 +98,19 @@ Côté front, mêmes règles qu'au back : `features → shared` autorisé, `shar
 
 ## Stack
 
-Java 25 (LTS) · Spring Boot 4 · Spring Security · JPA/Hibernate · Flyway · PostgreSQL 18 · MinIO (API S3) · Maven multi-module · React + Vite · ArchUnit · Docker Compose — *prévu : Spring AI 2 + pgvector (chatbot)*
-
+Java 25 (LTS) · Spring Boot 4 · Spring Security · JPA/Hibernate · Liquibase · PostgreSQL 18 · MinIO (API S3) · Maven multi-module · React + Vite · ArchUnit · Docker Compose — *prévu : Spring AI 2 + pgvector (chatbot)*
 ## Démarrage local
 
-Prérequis : Java 25, Node ≥ 22, Docker, Git.
+Prérequis : Java 25, Docker, Git.
 
 ```bash
 # 1. Infrastructure (PostgreSQL + MinIO)
 docker compose up -d
 
-# 2. Build complet (front inclus) et lancement
-./mvnw clean package
-java -jar gesta/target/gesta.jar
+# 2. Lancement de l'application (depuis l'IDE, ou via Maven)
+mvn spring-boot:run -pl gesta
 
-# 3. Front en mode dev (hot reload, proxy vers :8080)
-cd front && npm install && npm run dev
+
 ```
 
 - Application : http://localhost:8080
