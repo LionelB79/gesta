@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: createSchema-gesta
+      author: lionel
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - schemaExists:
+                schemaName: gesta
+      changes:
+        - sql:
+            sql: CREATE SCHEMA gesta;
+      rollback:
+        - sql:
+            sql: DROP SCHEMA IF EXISTS gesta RESTRICT;
+  - changeSet:
+      id: createTable-users
+      author: lionel
+      changes:
+        - createTable:
+            schemaName: gesta
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_users
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: insert-users
+      author: lionel
+      changes:
+        - insert:
+            schemaName: gesta
+            tableName: users
+            columns:
+              - column:
+                  name: username
+                  value: 'demo'
+              - column:
+                  name: password_hash
+                  value: '$2a$10$AeyiCVZHVR3nLparznwUzOtMZwwN55XjOncb8PUtpksK2vf0/KJN2'
+              - column:
+                  name: enabled
+                  value: true
+      rollback:
+        - delete:
+            schemaName: gesta
+            tableName: users
+            where: username='demo'

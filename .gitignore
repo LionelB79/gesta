@@ -11,3 +11,4 @@ front/.vite/
 .vscode/
 .env
 .DS_Store
+./contexte.sh
