@@ -15,12 +15,11 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(
                 auth -> auth
-                        //TODO: "/api/test/**" à retirer
-                        .requestMatchers("/actuator/health","/api/test/**","/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
         );
         http.httpBasic(Customizer.withDefaults());
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**"));
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/bookings/**"));
         return http.build();
     }
 

@@ -2,11 +2,6 @@ databaseChangeLog:
   - changeSet:
       id: createSchema-gesta
       author: lionel
-      preConditions:
-        - onFail: MARK_RAN
-        - not:
-            - schemaExists:
-                schemaName: gesta
       changes:
         - sql:
             sql: CREATE SCHEMA gesta;

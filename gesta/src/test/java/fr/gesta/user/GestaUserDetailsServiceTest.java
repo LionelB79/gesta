@@ -49,12 +49,11 @@ public class GestaUserDetailsServiceTest {
     }
 
     @Test
-    void loadUserByUsernameTestWithoutUser() {
+    void loadUserByUsernameTestReturnUsernameNotFound() {
         when(userRepository.findByUsername("test")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> gestaUserDetailsService.loadUserByUsername("test"))
                 .isInstanceOf(UsernameNotFoundException.class)
                 .hasMessageContaining("test");
 
     }
-
 }

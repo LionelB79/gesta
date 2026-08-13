@@ -55,7 +55,7 @@ public class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("NOT_FOUND", response.getBody().code());
-        assertEquals("élément introuvable",response.getBody().message());
+        assertEquals("Élément introuvable",response.getBody().message());
         assertEquals("/api/test/inconnu",response.getBody().path());
     }
 }

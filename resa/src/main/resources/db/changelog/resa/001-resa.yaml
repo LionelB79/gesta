@@ -1,0 +1,160 @@
+databaseChangeLog:
+  - changeSet:
+      id: createSchema-resa
+      author: lionel
+      changes:
+        - sql:
+            sql: CREATE SCHEMA resa;
+      rollback:
+        - sql:
+            sql: DROP SCHEMA IF EXISTS resa RESTRICT;
+  - changeSet:
+      id: createTable-rooms
+      author: lionel
+      changes:
+        - createTable:
+            schemaName: resa
+            tableName: rooms
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_rooms
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: capacity
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: createTable-bookings
+      author: lionel
+      changes:
+        - createTable:
+            schemaName: resa
+            tableName: bookings
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_bookings
+                    nullable: false
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: state
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        -  addForeignKeyConstraint:
+            baseColumnNames: room_id
+            baseTableName: bookings
+            referencedTableName: rooms
+            referencedColumnNames: id
+            referencedTableSchemaName: resa
+            baseTableSchemaName: resa
+            constraintName: fk_bookings_room
+  - changeSet:
+      id: insert-rooms
+      author: lionel
+      changes:
+        - insert:
+            schemaName: resa
+            tableName: rooms
+            columns:
+              - column:
+                  name: name
+                  value: 'demo'
+              - column:
+                  name: capacity
+                  value: 10
+              - column:
+                  name: enabled
+                  value: true
+        - insert:
+            schemaName: resa
+            tableName: rooms
+            columns:
+              - column:
+                  name: name
+                  value: 'mars'
+              - column:
+                  name: capacity
+                  value: 3
+              - column:
+                  name: enabled
+                  value: true
+        - insert:
+            schemaName: resa
+            tableName: rooms
+            columns:
+              - column:
+                  name: name
+                  value: 'saturne'
+              - column:
+                  name: capacity
+                  value: 15
+              - column:
+                  name: enabled
+                  value: true
+      rollback:
+        - delete:
+            schemaName: resa
+            tableName: rooms
+            where: name='demo'
+        - delete:
+            schemaName: resa
+            tableName: rooms
+            where: name='mars'
+        - delete:
+            schemaName: resa
+            tableName: rooms
+            where: name='saturne'

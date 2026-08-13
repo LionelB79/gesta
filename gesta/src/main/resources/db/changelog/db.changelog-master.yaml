@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/gesta/001-users.yaml
+  - include:
+      file: db/changelog/resa/001-resa.yaml

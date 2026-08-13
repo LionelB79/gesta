@@ -24,6 +24,7 @@
     <modules>
         <module>squelette</module>
         <module>gesta</module>
+        <module>resa</module>
     </modules>
 
     <dependencyManagement>
@@ -31,6 +32,11 @@
             <dependency>
                 <groupId>fr.gesta</groupId>
                 <artifactId>squelette</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fr.gesta</groupId>
+                <artifactId>resa</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

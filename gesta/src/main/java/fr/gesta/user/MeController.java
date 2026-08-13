@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MeController {
 
-    @GetMapping("/api/me")
+    @GetMapping("/me")
     public MeResponse me(Authentication  authentication) {
         return new MeResponse(authentication.getName());
     }
