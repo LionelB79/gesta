@@ -30,7 +30,7 @@ public class BookingService {
 
         Room room = roomRepository.findById(roomId).orElseThrow(() -> new ApiException("Salle introuvable", HttpStatus.NOT_FOUND, ROOM_NOT_FOUND));
         if (bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)) {
-            throw new ApiException("le crénau de la réservation ne doit pas chevaucher une autre réservation", HttpStatus.CONFLICT, OVERLAP_ERROR);
+            throw new ApiException("le créneau de la réservation ne doit pas chevaucher une autre réservation", HttpStatus.CONFLICT, OVERLAP_ERROR);
         }
         Booking booking = new Booking(room, user, start, end);
 
