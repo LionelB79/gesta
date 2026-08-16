@@ -3,11 +3,16 @@ package fr.gesta.resa.booking;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
 import fr.gesta.squelette.ApiException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static fr.gesta.resa.ErrorConst.*;
 
@@ -37,6 +42,38 @@ public class BookingService {
 
         bookingRepository.save(booking);
 
-        return new BookingResponse(booking.getId(), booking.getUsername(), start, end, room.getName());
+        return toResponse(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BookingResponse> list(Long roomId, Pageable pageable, BookingState state, Instant start) {
+
+        Page<Booking> bookings = bookingRepository.findFilteredBookings(roomId,start, state, pageable);
+
+        return bookings.map(this::toResponse);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<BookingResponse> listAll(Pageable pageable) {
+
+        return bookingRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    private BookingResponse toResponse(Booking booking) {
+        return new BookingResponse(booking.getId(), booking.getUsername(), booking.getStartAt(), booking.getEndAt(), booking.getRoom().getName());
+    }
+    @Transactional(readOnly = true)
+    public List<BookingStats>countBookings() {
+
+        Map<String,Long> bookings = bookingRepository.findByState(BookingState.CONFIRMED)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        booking -> booking.getRoom().getName(),
+                        Collectors.counting()));
+
+        return bookings.entrySet().stream()
+                .map(entry -> new BookingStats(entry.getKey(), entry.getValue()))
+                .toList();
     }
 }

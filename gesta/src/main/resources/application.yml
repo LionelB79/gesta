@@ -9,8 +9,14 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+logging:
+  level:
+    org.hibernate.SQL: INFO
 
 management:
   endpoints:

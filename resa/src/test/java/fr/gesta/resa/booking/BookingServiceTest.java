@@ -8,11 +8,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static fr.gesta.resa.ErrorConst.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,4 +98,47 @@ public class BookingServiceTest {
 
         verify(bookingRepository, never()).save(any());
     }
+
+    @Test
+    void listTest() {
+        Long roomId = 1L;
+        BookingState state = BookingState.CONFIRMED;
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setName("room1");
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Booking booking1 = new Booking(room,"username", start, end);
+        Booking booking2 = new Booking(room,"username", start, end);
+
+        PageImpl<Booking> bookings = new PageImpl<>(List.of(booking1, booking2), PageRequest.of(0, 2), 5);
+
+        when(bookingRepository.findFilteredBookings(roomId,start, state, pageable)).thenReturn(bookings);
+
+        Page<BookingResponse> result = bookingService.list(roomId, pageable, state, start);
+
+        assertThat(result.getTotalElements()).isEqualTo(5);
+        assertThat(result.getTotalPages()).isEqualTo(3);
+        assertThat(result.getNumber()).isZero();
+        assertThat(result.getContent())
+                .extracting(BookingResponse::roomName)
+                .containsExactly("room1", "room1");
+    }
+
+    @Test
+    void listTestWithEmptyList() {
+        Long roomId = 1L;
+        Instant start = Instant.now().plusSeconds(3600);
+        BookingState state = BookingState.CONFIRMED;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(bookingRepository.findFilteredBookings(roomId,start, state, pageable)).thenReturn(Page.empty());
+
+        Page<BookingResponse> result = bookingService.list(roomId, pageable, state, start);
+        assertThat(result).isEmpty();
+    }
+
+
+
 }

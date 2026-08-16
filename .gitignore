@@ -13,4 +13,5 @@ front/.vite/
 .DS_Store
 dump.sh
 projet_complet.txt
+doc_commandes.txt
 .claude/settings.local.json
