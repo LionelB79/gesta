@@ -16,11 +16,13 @@ import org.springframework.data.domain.Pageable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.*;
 
 import static fr.gesta.resa.ErrorConst.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -51,7 +53,7 @@ public class BookingServiceTest {
         assertEquals("username", result.user());
         assertEquals(start, result.startAt());
         assertEquals(end, result.endAt());
-        verify(bookingRepository).save(any(Booking.class));
+        verify(bookingRepository).saveAndFlush(any(Booking.class));
     }
 
     @Test
@@ -109,12 +111,12 @@ public class BookingServiceTest {
         room.setName("room1");
         Pageable pageable = PageRequest.of(0, 10);
 
-        Booking booking1 = new Booking(room,"username", start, end);
-        Booking booking2 = new Booking(room,"username", start, end);
+        Booking booking1 = new Booking(room, "username", start, end);
+        Booking booking2 = new Booking(room, "username", start, end);
 
         PageImpl<Booking> bookings = new PageImpl<>(List.of(booking1, booking2), PageRequest.of(0, 2), 5);
 
-        when(bookingRepository.findFilteredBookings(roomId,start, state, pageable)).thenReturn(bookings);
+        when(bookingRepository.findFilteredBookings(roomId, start, state, pageable)).thenReturn(bookings);
 
         Page<BookingResponse> result = bookingService.list(roomId, pageable, state, start);
 
@@ -133,12 +135,84 @@ public class BookingServiceTest {
         BookingState state = BookingState.CONFIRMED;
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(bookingRepository.findFilteredBookings(roomId,start, state, pageable)).thenReturn(Page.empty());
+        when(bookingRepository.findFilteredBookings(roomId, start, state, pageable)).thenReturn(Page.empty());
 
         Page<BookingResponse> result = bookingService.list(roomId, pageable, state, start);
         assertThat(result).isEmpty();
     }
 
+    @Test
+    void cancelTestWithBooking() {
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setName("room1");
 
+        Booking booking = new Booking(room, "username", start, end);
+
+
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+
+        BookingResponse result = bookingService.cancel(booking.getId(), "username");
+
+        assertEquals(BookingState.CANCELED, result.state());
+    }
+
+    @Test
+    void cancelTestReturnNotFound() {
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setName("room1");
+
+        Booking booking = new Booking(room, "username", start, end);
+
+
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username"))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", BOOKING_NOT_FOUND);
+
+        assertEquals(BookingState.CONFIRMED, booking.getState());
+    }
+
+    @Test
+    void cancelTestReturnForbidden() {
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setName("room1");
+
+        Booking booking = new Booking(room, "username", start, end);
+
+
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username1"))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", FORBIDDEN_BOOKING);
+
+        assertEquals(BookingState.CONFIRMED, booking.getState());
+    }
+
+    @Test
+    void cancelTestReturnConflict() {
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setName("room1");
+
+        Booking booking = new Booking(room, "username", start, end);
+        booking.setState(BookingState.CANCELED);
+
+        when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username"))
+                .isInstanceOf(ApiException.class)
+                .hasFieldOrPropertyWithValue("code", ALREADY_CANCELED);
+
+        assertEquals(BookingState.CANCELED, booking.getState());
+    }
 
 }

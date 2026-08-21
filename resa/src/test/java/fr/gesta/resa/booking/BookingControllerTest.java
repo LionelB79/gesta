@@ -29,10 +29,11 @@ public class BookingControllerTest {
         Instant start = Instant.now().plusSeconds(3600);
         Instant end = start.plusSeconds(3600);
         String roomName = "test";
+        BookingState state = BookingState.CONFIRMED;
 
         Authentication authentication = Mockito.mock(Authentication.class);
         CreateBookingRequest createBookingRequest = new CreateBookingRequest(roomId,start,end);
-        BookingResponse bookingResponse = new BookingResponse(roomId,userName,start,end,roomName);
+        BookingResponse bookingResponse = new BookingResponse(roomId,userName,start,end,roomName, state);
 
         when(authentication.getName()).thenReturn(userName);
 

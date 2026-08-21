@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-extension-btree-gist
+      author: lionel
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS btree_gist;
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS btree_gist;
+
+  - changeSet:
+      id: addExclusionConstraint-bookings
+      author: lionel
+      changes:
+        - sql:
+            sql: ALTER TABLE resa.bookings ADD CONSTRAINT excl_bookings_overlap
+              EXCLUDE USING gist (
+              room_id WITH =,
+              tstzrange(start_at, end_at) WITH &&
+              ) WHERE (state = 'CONFIRMED');
+      rollback:
+        - sql:
+            sql: ALTER TABLE resa.bookings DROP CONSTRAINT excl_bookings_overlap;

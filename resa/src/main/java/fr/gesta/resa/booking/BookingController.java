@@ -36,4 +36,11 @@ public class BookingController {
     public List<BookingStats> countBookings() {
         return  bookingService.countBookings();
     }
+
+
+    @PostMapping("/bookings/{id}")
+    public BookingResponse cancelBooking(@PathVariable Long id, Authentication authentication) {
+        return bookingService.cancel(id, authentication.getName());
+    }
+
 }
