@@ -14,9 +14,6 @@ spring:
         format_sql: true
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
 
 management:
   endpoints:

@@ -71,11 +71,11 @@ gesta/
 │   # modules planifiés, non encore créés :
 ├── ref/                   # (à venir) référentiels (items, liens)
 ├── stocko/                # (à venir) abstraction stockage S3
-├── resa/                  # (à venir) réservation de salles
+├── resa/                  #  réservation de salles
 ├── materio/               # (à venir) gestion du matériel
 ├── odito/                 # (à venir) modèles de documents
 ├── staff/                 # (à venir) consultation SQL cataloguée
-└── front/                 # (à venir) React (Vite), build embarqué dans le jar
+└── front/                 #  React (Vite), build embarqué dans le jar
     └── src/
         ├── app/           # router, providers, layout global
         ├── shared/        # ui/, api/, auth/, lib/ — le « squelette front »
