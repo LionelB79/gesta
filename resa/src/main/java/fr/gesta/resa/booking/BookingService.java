@@ -1,12 +1,11 @@
 package fr.gesta.resa.booking;
 
+import fr.gesta.resa.exception.*;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
-import fr.gesta.squelette.ApiException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static fr.gesta.resa.ErrorConst.*;
 
 @Service
 public class BookingService {
@@ -32,19 +29,19 @@ public class BookingService {
     @Transactional
     public BookingResponse create(Long roomId, String user, Instant start, Instant end) {
         if (!end.isAfter(start)) {
-            throw new ApiException("L'heure de début de la réservation doit précéder l'heure de fin", HttpStatus.BAD_REQUEST, TIMING_ERROR);
+            throw new InvalidBookingPeriodException("L'heure de début de la réservation doit précéder l'heure de fin");
         }
 
-        Room room = roomRepository.findById(roomId).orElseThrow(() -> new ApiException("Salle introuvable", HttpStatus.NOT_FOUND, ROOM_NOT_FOUND));
+        Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
         if (bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)) {
-            throw new ApiException("le créneau de la réservation ne doit pas chevaucher une autre réservation", HttpStatus.CONFLICT, OVERLAP_ERROR);
+            throw new BookingOverlapException();
         }
         Booking booking = new Booking(room, user, start, end);
 
         try {
             bookingRepository.saveAndFlush(booking);
         } catch (DataIntegrityViolationException e) {
-            throw new ApiException("le créneau de la réservation ne doit pas chevaucher une autre réservation", HttpStatus.CONFLICT, OVERLAP_ERROR);
+            throw new BookingOverlapException();
         }
 
 
@@ -67,7 +64,13 @@ public class BookingService {
     }
 
     private BookingResponse toResponse(Booking booking) {
-        return new BookingResponse(booking.getId(), booking.getUsername(), booking.getStartAt(), booking.getEndAt(), booking.getRoom().getName(), booking.getState());
+        return new BookingResponse(
+                booking.getId(),
+                booking.getUsername(),
+                booking.getStartAt(),
+                booking.getEndAt(),
+                booking.getRoom().getName(),
+                booking.getState());
     }
 
     @Transactional(readOnly = true)
@@ -88,15 +91,14 @@ public class BookingService {
     public BookingResponse cancel(Long id, String user) {
 
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new ApiException("Réservation introuvable", HttpStatus.NOT_FOUND, BOOKING_NOT_FOUND));
+                .orElseThrow(BookingNotFoundException::new);
 
         if (!Objects.equals(booking.getUsername(), user)) {
-            throw new ApiException("Impossible de supprimer la réservation d'un autre", HttpStatus.FORBIDDEN, FORBIDDEN_BOOKING);
+            throw new ForbiddenBookingException();
         }
 
         if (booking.getState() == BookingState.CANCELED) {
-            throw new ApiException("La réservation a déjà été annulée", HttpStatus.CONFLICT, ALREADY_CANCELED);
-
+            throw new BookingAlreadyCanceledException();
         }
 
         booking.setState(BookingState.CANCELED);

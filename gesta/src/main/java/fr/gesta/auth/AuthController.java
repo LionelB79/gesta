@@ -1,6 +1,6 @@
 package fr.gesta.auth;
 
-import fr.gesta.squelette.ApiException;
+import fr.gesta.exception.InvalidCredentialsException;
 import fr.gesta.user.MeResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,8 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
-
-import static fr.gesta.ErrorConst.INVALID_CREDENTIALS;
 
 
 @RestController
@@ -40,7 +38,7 @@ public class AuthController {
         try {
             authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
         } catch (AuthenticationException e) {
-            throw new ApiException("Identifiants invalides", HttpStatus.UNAUTHORIZED, INVALID_CREDENTIALS);
+            throw new InvalidCredentialsException();
         }
 
         s.setAuthentication(authenticationResponse);

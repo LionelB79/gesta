@@ -1,5 +1,6 @@
 package fr.gesta.squelette;
 
+import fr.gesta.squelette.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,19 +19,15 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ErrorResponse> handleApiException(ApiException e, HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(Instant.now(), e.getStatus().value(), e.getCode(), e.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(e.getStatus()).body(response);
-    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleInternalException(Exception e, HttpServletRequest request) {
         ErrorResponse response = new ErrorResponse(Instant.now(), 500, "INTERNAL_ERROR", "Erreur inconnue", request.getRequestURI());
         log.error("Erreur non gérée sur {}", request.getRequestURI(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
+
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFoundException(NoResourceFoundException e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e, HttpServletRequest request) {
         ErrorResponse response = new ErrorResponse(Instant.now(), 404, "NOT_FOUND", "Élément introuvable", request.getRequestURI());
         log.warn("Ressource introuvable : {}", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
@@ -44,9 +41,44 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
 
         ErrorResponse response = new ErrorResponse(Instant.now(), 400, "VALIDATION_ERROR", fieldErrors, request.getRequestURI());
-        log.warn("Demande non valide sur {} : {}",request.getRequestURI(), fieldErrors);
-
-
+        log.warn("Demande non valide sur {} : {}", request.getRequestURI(), fieldErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.NOT_FOUND, request);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.CONFLICT, request);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.FORBIDDEN, request);
+    }
+
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthenticatedException e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.UNAUTHORIZED, request);
+    }
+
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRule(BusinessRuleException e, HttpServletRequest request) {
+        return buildResponse(e, HttpStatus.BAD_REQUEST, request);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(BusinessException e, HttpStatus status, HttpServletRequest request) {
+        ErrorResponse response = new ErrorResponse(Instant.now(), status.value(), e.getCode(), e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleUncategorized(BusinessException e, HttpServletRequest request) {
+        log.error("Exception métier sans catégorie sur {}", request.getRequestURI(), e);
+        return buildResponse(e, HttpStatus.INTERNAL_SERVER_ERROR, request);
+    }
+
 }

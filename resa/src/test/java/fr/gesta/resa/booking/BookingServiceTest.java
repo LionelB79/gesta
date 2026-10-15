@@ -1,8 +1,8 @@
 package fr.gesta.resa.booking;
 
+import fr.gesta.resa.exception.*;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
-import fr.gesta.squelette.ApiException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,7 +22,6 @@ import static fr.gesta.resa.ErrorConst.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -66,7 +65,7 @@ public class BookingServiceTest {
 
 
         assertThatThrownBy(() -> bookingService.create(roomId, "username", start, end))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(RoomNotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", ROOM_NOT_FOUND);
         verify(bookingRepository, never()).save(any());
     }
@@ -78,7 +77,7 @@ public class BookingServiceTest {
         Instant end = start.plusSeconds(3600);
 
         assertThatThrownBy(() -> bookingService.create(roomId, "username", end, start))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(InvalidBookingPeriodException.class)
                 .hasFieldOrPropertyWithValue("code", TIMING_ERROR);
 
         verify(bookingRepository, never()).save(any());
@@ -95,7 +94,7 @@ public class BookingServiceTest {
         when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(true);
 
         assertThatThrownBy(() -> bookingService.create(roomId, "username", start, end))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(BookingOverlapException.class)
                 .hasFieldOrPropertyWithValue("code", OVERLAP_ERROR);
 
         verify(bookingRepository, never()).save(any());
@@ -171,7 +170,7 @@ public class BookingServiceTest {
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username"))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(BookingNotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", BOOKING_NOT_FOUND);
 
         assertEquals(BookingState.CONFIRMED, booking.getState());
@@ -190,7 +189,7 @@ public class BookingServiceTest {
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username1"))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(ForbiddenBookingException.class)
                 .hasFieldOrPropertyWithValue("code", FORBIDDEN_BOOKING);
 
         assertEquals(BookingState.CONFIRMED, booking.getState());
@@ -209,7 +208,7 @@ public class BookingServiceTest {
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username"))
-                .isInstanceOf(ApiException.class)
+                .isInstanceOf(BookingOverlapException.class)
                 .hasFieldOrPropertyWithValue("code", ALREADY_CANCELED);
 
         assertEquals(BookingState.CANCELED, booking.getState());

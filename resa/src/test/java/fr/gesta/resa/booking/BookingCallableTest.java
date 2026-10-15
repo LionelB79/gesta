@@ -1,7 +1,7 @@
 package fr.gesta.resa.booking;
 
 import fr.gesta.resa.TestApplication;
-import fr.gesta.squelette.ApiException;
+import fr.gesta.resa.exception.BookingOverlapException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,9 @@ public class BookingCallableTest {
     BookingRepository bookingRepository;
 
     @BeforeEach
-    void setUp() {bookingRepository.deleteAll();}
+    void setUp() {
+        bookingRepository.deleteAll();
+    }
 
     @Test
     void createTestWithTwoBookings() throws InterruptedException {
@@ -53,20 +55,21 @@ public class BookingCallableTest {
         latch.countDown();
 
         int succes = 0;
-        ApiException fail = null;
+        BookingOverlapException fail = null;
 
 
         try {
             BookingResponse result = resp.get();
-             succes += 1;
+            succes += 1;
         } catch (ExecutionException e) {
-            fail = (ApiException) e.getCause();        }
+            fail = (BookingOverlapException) e.getCause();
+        }
 
         try {
             BookingResponse result2 = resp2.get();
-             succes += 1;
+            succes += 1;
         } catch (ExecutionException e) {
-            fail = (ApiException) e.getCause();
+            fail = (BookingOverlapException) e.getCause();
         }
 
         executorService.shutdown();
