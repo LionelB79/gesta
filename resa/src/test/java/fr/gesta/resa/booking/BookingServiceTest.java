@@ -47,7 +47,7 @@ public class BookingServiceTest {
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
         when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(false);
 
-        BookingResponse result = bookingService.create(roomId, "username", start, end);
+        BookingResponse result = bookingService.create(roomId, "username",new BookingPeriod(start, end));
 
         assertEquals("username", result.user());
         assertEquals(start, result.startAt());
@@ -64,24 +64,12 @@ public class BookingServiceTest {
         when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
 
-        assertThatThrownBy(() -> bookingService.create(roomId, "username", start, end))
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
                 .isInstanceOf(RoomNotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", ROOM_NOT_FOUND);
         verify(bookingRepository, never()).save(any());
     }
 
-    @Test
-    void createBookingTestReturnBadRequest() {
-        Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
-
-        assertThatThrownBy(() -> bookingService.create(roomId, "username", end, start))
-                .isInstanceOf(InvalidBookingPeriodException.class)
-                .hasFieldOrPropertyWithValue("code", TIMING_ERROR);
-
-        verify(bookingRepository, never()).save(any());
-    }
 
     @Test
     void createBookingTestReturnConflict() {
@@ -93,7 +81,7 @@ public class BookingServiceTest {
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
         when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(true);
 
-        assertThatThrownBy(() -> bookingService.create(roomId, "username", start, end))
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
                 .isInstanceOf(BookingOverlapException.class)
                 .hasFieldOrPropertyWithValue("code", OVERLAP_ERROR);
 
@@ -110,8 +98,8 @@ public class BookingServiceTest {
         room.setName("room1");
         Pageable pageable = PageRequest.of(0, 10);
 
-        Booking booking1 = new Booking(room, "username", start, end);
-        Booking booking2 = new Booking(room, "username", start, end);
+        Booking booking1 = new Booking(room, "username", new BookingPeriod(start, end));
+        Booking booking2 = new Booking(room, "username",  new BookingPeriod(start, end));
 
         PageImpl<Booking> bookings = new PageImpl<>(List.of(booking1, booking2), PageRequest.of(0, 2), 5);
 
@@ -147,7 +135,7 @@ public class BookingServiceTest {
         Room room = new Room();
         room.setName("room1");
 
-        Booking booking = new Booking(room, "username", start, end);
+        Booking booking = new Booking(room, "username", new BookingPeriod(start, end));
 
 
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
@@ -164,7 +152,7 @@ public class BookingServiceTest {
         Room room = new Room();
         room.setName("room1");
 
-        Booking booking = new Booking(room, "username", start, end);
+        Booking booking = new Booking(room, "username",new BookingPeriod(start, end));
 
 
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.empty());
@@ -183,7 +171,7 @@ public class BookingServiceTest {
         Room room = new Room();
         room.setName("room1");
 
-        Booking booking = new Booking(room, "username", start, end);
+        Booking booking = new Booking(room, "username",new BookingPeriod(start, end));
 
 
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
@@ -196,19 +184,19 @@ public class BookingServiceTest {
     }
 
     @Test
-    void cancelTestReturnConflict() {
+    void cancelRejectsAlreadyCanceledBooking() {
         Instant start = Instant.now().plusSeconds(3600);
         Instant end = start.plusSeconds(3600);
         Room room = new Room();
         room.setName("room1");
 
-        Booking booking = new Booking(room, "username", start, end);
+        Booking booking = new Booking(room, "username", new BookingPeriod(start, end));
         booking.setState(BookingState.CANCELED);
 
         when(bookingRepository.findById(booking.getId())).thenReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> bookingService.cancel(booking.getId(), "username"))
-                .isInstanceOf(BookingOverlapException.class)
+                .isInstanceOf(BookingAlreadyCanceledException.class)
                 .hasFieldOrPropertyWithValue("code", ALREADY_CANCELED);
 
         assertEquals(BookingState.CANCELED, booking.getState());

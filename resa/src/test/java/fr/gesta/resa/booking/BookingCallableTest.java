@@ -33,19 +33,19 @@ public class BookingCallableTest {
         Long roomId = 1L;
         Instant start = Instant.now().plusSeconds(3600);
         Instant end = start.plusSeconds(3600);
-
+BookingPeriod period = new BookingPeriod(start, end);
         CountDownLatch latch = new CountDownLatch(1);
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         Callable<BookingResponse> call1 = () -> {
             latch.await();
-            return bookingService.create(roomId, "username", start, end);
+            return bookingService.create(roomId, "username", period);
         };
 
         Callable<BookingResponse> call2 = () -> {
             latch.await();
-            return bookingService.create(roomId, "username", start, end);
+            return bookingService.create(roomId, "username",period);
         };
 
         Future<BookingResponse> resp = executorService.submit(call1);

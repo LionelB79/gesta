@@ -19,11 +19,10 @@ public class Booking {
     @Column(name = "username", nullable = false, length = 50)
     private String username;
 
-    @Column(name = "start_at", nullable = false)
-    private Instant startAt;
-
-    @Column(name = "end_at", nullable = false)
-    private Instant endAt;
+    @Embedded
+    @AttributeOverride(name = "start", column = @Column(name = "start_at", nullable = false))
+    @AttributeOverride(name = "end", column = @Column(name = "end_at", nullable = false))
+    private BookingPeriod period;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false, length = 20)
@@ -36,11 +35,10 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(Room room, String username, Instant startAt, Instant endAt) {
+    public Booking(Room room, String username, BookingPeriod period) {
         this.room = room;
         this.username = username;
-        this.startAt = startAt;
-        this.endAt = endAt;
+        this.period = period;
         this.state = BookingState.CONFIRMED;
     }
 
@@ -48,6 +46,9 @@ public class Booking {
         return createdAt;
     }
 
+    public BookingPeriod getPeriod() {
+        return period;
+    }
 
     public BookingState getState() {
         return state;
@@ -55,22 +56,6 @@ public class Booking {
 
     public void setState(BookingState state) {
         this.state = state;
-    }
-
-    public Instant getEndAt() {
-        return endAt;
-    }
-
-    public void setEndAt(Instant endAt) {
-        this.endAt = endAt;
-    }
-
-    public Instant getStartAt() {
-        return startAt;
-    }
-
-    public void setStartAt(Instant startAt) {
-        this.startAt = startAt;
     }
 
     public String getUsername() {

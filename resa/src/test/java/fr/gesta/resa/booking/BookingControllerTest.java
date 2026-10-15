@@ -37,7 +37,7 @@ public class BookingControllerTest {
 
         when(authentication.getName()).thenReturn(userName);
 
-        when(bookingService.create(roomId, userName, start, end)).thenReturn(bookingResponse);
+        when(bookingService.create(roomId, userName, new BookingPeriod(start, end))).thenReturn(bookingResponse);
 
         BookingResponse response = bookingController.createBooking(createBookingRequest, authentication);
 

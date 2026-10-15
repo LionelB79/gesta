@@ -24,7 +24,7 @@ public class BookingController {
     @PostMapping("/bookings")
     @ResponseStatus(code = HttpStatus.CREATED)
     public BookingResponse createBooking(@Valid @RequestBody CreateBookingRequest request, Authentication authentication) {
-        return bookingService.create(request.roomId(), authentication.getName(), request.start(), request.end());
+        return bookingService.create(request.roomId(), authentication.getName(), new BookingPeriod(request.start(), request.end()));
 
     }
     @GetMapping("/bookings")

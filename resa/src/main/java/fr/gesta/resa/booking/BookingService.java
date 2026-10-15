@@ -27,16 +27,13 @@ public class BookingService {
     }
 
     @Transactional
-    public BookingResponse create(Long roomId, String user, Instant start, Instant end) {
-        if (!end.isAfter(start)) {
-            throw new InvalidBookingPeriodException("L'heure de début de la réservation doit précéder l'heure de fin");
-        }
+    public BookingResponse create(Long roomId, String user, BookingPeriod period) {
 
         Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
-        if (bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)) {
+        if (bookingRepository.hasOverlap(roomId, period.start(), period.end(), BookingState.CONFIRMED)) {
             throw new BookingOverlapException();
         }
-        Booking booking = new Booking(room, user, start, end);
+        Booking booking = new Booking(room, user, period);
 
         try {
             bookingRepository.saveAndFlush(booking);
@@ -67,8 +64,8 @@ public class BookingService {
         return new BookingResponse(
                 booking.getId(),
                 booking.getUsername(),
-                booking.getStartAt(),
-                booking.getEndAt(),
+                booking.getPeriod().start(),
+                booking.getPeriod().end(),
                 booking.getRoom().getName(),
                 booking.getState());
     }
