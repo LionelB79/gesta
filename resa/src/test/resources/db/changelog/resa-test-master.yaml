@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/resa/001-resa.yaml
+  - include:
+      file: db/changelog/resa/002-threadsbookings.yaml

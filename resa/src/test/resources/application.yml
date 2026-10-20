@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/gesta
+    url: jdbc:postgresql://localhost:5433/gesta_test
     username: gesta
     password: gesta
   jpa:
@@ -8,4 +8,5 @@ spring:
       ddl-auto: validate
     open-in-view: false
   liquibase:
-    enabled: false
+    enabled: true
+    change-log: classpath:db/changelog/resa-test-master.yaml
