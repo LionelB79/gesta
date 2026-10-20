@@ -67,7 +67,7 @@ public class BookingServiceTest {
         assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
                 .isInstanceOf(RoomNotFoundException.class)
                 .hasFieldOrPropertyWithValue("code", ROOM_NOT_FOUND);
-        verify(bookingRepository, never()).save(any());
+        verifyNoInteractions(bookingRepository);
     }
 
 
@@ -85,7 +85,8 @@ public class BookingServiceTest {
                 .isInstanceOf(BookingOverlapException.class)
                 .hasFieldOrPropertyWithValue("code", OVERLAP_ERROR);
 
-        verify(bookingRepository, never()).save(any());
+        verify(bookingRepository).hasOverlap(roomId, start, end, BookingState.CONFIRMED);
+        verifyNoMoreInteractions(bookingRepository);
     }
 
     @Test
