@@ -46,17 +46,27 @@ export async function apiClient<T>(
 
   if (!response.ok) {
     const text = await response.text();
-    const error = text
-      ? (JSON.parse(text) as ErrorResponse)
-      : ({
-          timestamp: "",
-          status: response.status,
-          code: "HTTP_ERROR",
-          message: response.statusText,
-          path,
-        } as ErrorResponse);
+
+    let error: ErrorResponse = {
+      timestamp: "",
+      status: response.status,
+      code: "HTTP_ERROR",
+      message: response.statusText || `Erreur ${response.status}`,
+      path,
+    } as ErrorResponse;
+
+    if (text) {
+      try {
+        const parsed = JSON.parse(text) as ErrorResponse;
+        if (parsed?.message) {
+          error = parsed;
+        }
+      } catch {
+        // JSON invalide : on garde le repli
+      }
+    }
     throw new ApiError(error);
   }
   const text = await response.text();
-return (text ? JSON.parse(text) : undefined) as T;
+  return (text ? JSON.parse(text) : undefined) as T;
 }
