@@ -2,49 +2,92 @@ package fr.gesta.squelette;
 
 import fr.gesta.squelette.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private String pathOf(WebRequest request) {
+        return ((ServletWebRequest) request).getRequest().getRequestURI();
+    }
+
+    // ── Exceptions Spring MVC (circuit hérité) ──
+    @Override
+    protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String path = pathOf(request);
+
+        String fieldErrors = ex.getBindingResult().getFieldErrors()
+                .stream()
+                .map(fe -> fe.getField() + " : " + fe.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        ErrorResponse response = new ErrorResponse(Instant.now(), status.value(), "VALIDATION_ERROR", fieldErrors, path);
+        return handleExceptionInternal(ex, response, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, Object body, HttpHeaders headers,
+            HttpStatusCode statusCode, WebRequest request) {
+
+        HttpStatus httpStatus = HttpStatus.resolve(statusCode.value());
+        String path = pathOf(request);
+        log.warn("Requête rejetée sur {} : {}", path, ex.getClass().getSimpleName());
+
+        if (body instanceof ErrorResponse errorResponse) {
+            return ResponseEntity.status(statusCode).headers(headers).body(errorResponse);
+        }
+
+        String code;
+        String message;
+        if (httpStatus != null) {
+            code = httpStatus.name();
+            message = httpStatus.getReasonPhrase();
+        } else {
+            code = "HTTP_ERROR";
+            message = "Requête invalide";
+        }
+
+        ErrorResponse response = new ErrorResponse(Instant.now(), statusCode.value(), code, message, path);
+        return ResponseEntity.status(statusCode).headers(headers).body(response);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSort(PropertyReferenceException e, HttpServletRequest request) {
+        ErrorResponse response = new ErrorResponse(Instant.now(), 400, "INVALID_SORT", "Paramètre de tri invalide", request.getRequestURI());
+        log.warn("Tri invalide sur {}", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    // ── Filet ──
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleInternalException(Exception e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception e, HttpServletRequest request) {
         ErrorResponse response = new ErrorResponse(Instant.now(), 500, "INTERNAL_ERROR", "Erreur inconnue", request.getRequestURI());
         log.error("Erreur non gérée sur {}", request.getRequestURI(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e, HttpServletRequest request) {
-        ErrorResponse response = new ErrorResponse(Instant.now(), 404, "NOT_FOUND", "Élément introuvable", request.getRequestURI());
-        log.warn("Ressource introuvable : {}", request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
-        String fieldErrors = e.getBindingResult().getFieldErrors()
-                .stream()
-                .map(fe -> fe.getField() + " : " + fe.getDefaultMessage())
-                .collect(Collectors.joining(", "));
 
-        ErrorResponse response = new ErrorResponse(Instant.now(), 400, "VALIDATION_ERROR", fieldErrors, request.getRequestURI());
-        log.warn("Demande non valide sur {} : {}", request.getRequestURI(), fieldErrors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-    }
-
+    // ── Exceptions métier ──
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException e, HttpServletRequest request) {
         return buildResponse(e, HttpStatus.NOT_FOUND, request);
