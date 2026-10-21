@@ -2,24 +2,20 @@ package fr.gesta.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorHandler securityErrorHandler) throws Exception {
         http.authorizeHttpRequests(
                 auth -> auth
                         .requestMatchers("/actuator/health", "/api/login").permitAll()
@@ -28,7 +24,7 @@ public class SecurityConfig {
         http.csrf(
                 csrf -> csrf.spa().ignoringRequestMatchers("/api/login"));
         http.exceptionHandling(ex -> ex.authenticationEntryPoint(
-                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+                securityErrorHandler).accessDeniedHandler(securityErrorHandler));
         return http.build();
     }
 
