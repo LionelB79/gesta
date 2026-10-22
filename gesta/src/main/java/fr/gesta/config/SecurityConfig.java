@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +22,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/api/login").permitAll()
                         .anyRequest().authenticated()
         );
+        http.requestCache(RequestCacheConfigurer::disable);
         http.csrf(
                 csrf -> csrf.spa().ignoringRequestMatchers("/api/login"));
         http.exceptionHandling(ex -> ex.authenticationEntryPoint(

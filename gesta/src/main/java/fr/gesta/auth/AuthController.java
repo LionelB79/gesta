@@ -31,19 +31,22 @@ public class AuthController {
 
     @PostMapping("/login")
     public MeResponse login(@Valid @RequestBody AuthRequest authRequest, HttpServletRequest request, HttpServletResponse response) {
-        SecurityContext s = SecurityContextHolder.createEmptyContext();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
         Authentication authenticationRequest =
                 UsernamePasswordAuthenticationToken.unauthenticated(authRequest.username(), authRequest.password());
         Authentication authenticationResponse;
+
         try {
             authenticationResponse = this.authenticationManager.authenticate(authenticationRequest);
         } catch (AuthenticationException e) {
             throw new InvalidCredentialsException();
         }
-
-        s.setAuthentication(authenticationResponse);
-        SecurityContextHolder.setContext(s);
-        securityContextRepository.saveContext(s, request, response);
+        if (request.getSession(false) != null) {
+            request.changeSessionId();
+        }
+        context.setAuthentication(authenticationResponse);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
         return new MeResponse(authenticationResponse.getName());
     }
 
