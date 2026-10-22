@@ -29,7 +29,7 @@ public class BookingController {
     }
     @GetMapping("/bookings")
     public Page<BookingResponse> findFilteredBookings(@RequestParam(required = false) Long roomId, Pageable pageable, @RequestParam(required = false) BookingState state,  @RequestParam(required = false) Instant start) {
-        return roomId != null ? bookingService.list(roomId, pageable, state, start) : bookingService.listAll(pageable);
+        return bookingService.list(roomId, pageable, state, start);
     }
 
 

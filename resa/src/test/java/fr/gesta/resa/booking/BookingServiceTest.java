@@ -202,5 +202,17 @@ public class BookingServiceTest {
 
         assertEquals(BookingState.CANCELED, booking.getState());
     }
+    @Test
+    void listWithoutRoomIdStillAppliesOtherFiltersTest() {
+        Pageable pageable = PageRequest.of(0, 10);
+        BookingState state = BookingState.CANCELED;
 
+        when(bookingRepository.findFilteredBookings(null, null, state, pageable)).thenReturn(Page.empty());
+
+        Page<BookingResponse> result = bookingService.list(null, pageable, state, null);
+
+        assertThat(result).isEmpty();
+        verify(bookingRepository).findFilteredBookings(null, null, state, pageable);
+        verifyNoMoreInteractions(bookingRepository);
+    }
 }

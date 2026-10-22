@@ -25,9 +25,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Page<Booking> findAll(Pageable pageable);
 
     @Query("""
-            SELECT b FROM Booking b WHERE b.room.id = :roomId
+            SELECT b FROM Booking b WHERE (:roomId IS NULL OR b.room.id = :roomId)
             AND (:state IS NULL OR b.state = :state)
-            AND (CAST(:startAt AS timestamp) IS NULL OR b.period.start  >= :startAt)
+            AND (CAST(:startAt AS timestamp) IS NULL OR b.period.start >= :startAt)
             """)
     @EntityGraph(attributePaths = "room")
     Page<Booking> findFilteredBookings(
