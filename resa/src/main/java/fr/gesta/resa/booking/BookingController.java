@@ -3,6 +3,7 @@ package fr.gesta.resa.booking;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class BookingController {
 
     }
     @GetMapping("/bookings")
-    public Page<BookingResponse> findFilteredBookings(@RequestParam(required = false) Long roomId, Pageable pageable, @RequestParam(required = false) BookingState state,  @RequestParam(required = false) Instant start) {
+    public Page<BookingResponse> findFilteredBookings(@RequestParam(required = false) Long roomId, @PageableDefault(sort = {"period.start", "id"}) Pageable pageable, @RequestParam(required = false) BookingState state, @RequestParam(required = false) Instant start) {
         return bookingService.list(roomId, pageable, state, start);
     }
 
