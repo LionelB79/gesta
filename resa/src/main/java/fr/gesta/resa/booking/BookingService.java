@@ -3,6 +3,9 @@ package fr.gesta.resa.booking;
 import fr.gesta.resa.exception.*;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
+import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
+
+    // SQLState PostgreSQL d'une violation de contrainte d'exclusion.
+    // bookings n'en a qu'une : excl_bookings_overlap (resa/002-threadsbookings.yaml)
+    private static final String EXCLUSION_VIOLATION = "23P01";
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
@@ -38,7 +45,11 @@ public class BookingService {
         try {
             bookingRepository.saveAndFlush(booking);
         } catch (DataIntegrityViolationException e) {
-            throw new BookingOverlapException();
+            if (e.getCause() instanceof ConstraintViolationException cve
+                    && EXCLUSION_VIOLATION.equals(cve.getSQLState())) {
+                throw new BookingOverlapException();
+            }
+            throw e;
         }
 
 
@@ -53,12 +64,6 @@ public class BookingService {
         return bookings.map(this::toResponse);
     }
 
-
-    @Transactional(readOnly = true)
-    public Page<BookingResponse> listAll(Pageable pageable) {
-
-        return bookingRepository.findAll(pageable).map(this::toResponse);
-    }
 
     private BookingResponse toResponse(Booking booking) {
         return new BookingResponse(

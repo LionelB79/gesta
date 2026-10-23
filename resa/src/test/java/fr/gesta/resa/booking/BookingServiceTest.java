@@ -3,16 +3,19 @@ package fr.gesta.resa.booking;
 import fr.gesta.resa.exception.*;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -214,5 +217,35 @@ public class BookingServiceTest {
         assertThat(result).isEmpty();
         verify(bookingRepository).findFilteredBookings(null, null, state, pageable);
         verifyNoMoreInteractions(bookingRepository);
+    }
+
+    @Test
+    void createTranslatesOverlapConstraintViolationTest() {
+        Long roomId = 1L;
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(new Room()));
+        when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(false);
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenThrow(
+                new DataIntegrityViolationException("overlap",
+                        new ConstraintViolationException("overlap", new SQLException("overlap", "23P01"), null)));
+
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
+                .isInstanceOf(BookingOverlapException.class);
+    }
+
+    @Test
+    void createRethrowsOtherIntegrityViolationsTest() {
+        Long roomId = 1L;
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        DataIntegrityViolationException fkViolation = new DataIntegrityViolationException("fk",
+                new ConstraintViolationException("fk", new SQLException("fk", "23503"), "fk_bookings_room"));
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(new Room()));
+        when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(false);
+        when(bookingRepository.saveAndFlush(any(Booking.class))).thenThrow(fkViolation);
+
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
+                .isSameAs(fkViolation);
     }
 }
