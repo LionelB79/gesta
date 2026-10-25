@@ -36,6 +36,10 @@ public class BookingService {
     public BookingResponse create(Long roomId, String user, BookingPeriod period) {
 
         Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
+        if (!room.isEnabled()) {
+            throw new RoomDisabledException();
+        }
+
         if (bookingRepository.hasOverlap(roomId, period.start(), period.end(), BookingState.CONFIRMED)) {
             throw new BookingOverlapException();
         }

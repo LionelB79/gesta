@@ -248,4 +248,20 @@ public class BookingServiceTest {
         assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
                 .isSameAs(fkViolation);
     }
+
+    @Test
+    void createRejectsDisabledRoomTest() {
+        Long roomId = 1L;
+        Instant start = Instant.now().plusSeconds(3600);
+        Instant end = start.plusSeconds(3600);
+        Room room = new Room();
+        room.setEnabled(false);
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
+                .isInstanceOf(RoomDisabledException.class)
+                .hasFieldOrPropertyWithValue("code", ROOM_DISABLED);
+
+        verifyNoInteractions(bookingRepository);
+    }
 }

@@ -1,5 +1,7 @@
 package fr.gesta.resa.room;
 
+import fr.gesta.resa.booking.BookingRepository;
+import fr.gesta.resa.booking.BookingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +22,11 @@ class RoomServiceTest {
 
     @Mock
     private RoomRepository roomRepository;
+    @Mock
+    private BookingService bookingService;
+
+    @Mock
+    private BookingRepository bookingRepository;
 
     @Test
     void listReturnsEnabledRoomsMappedToResponseTest() {
