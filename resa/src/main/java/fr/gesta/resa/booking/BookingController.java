@@ -28,6 +28,7 @@ public class BookingController {
         return bookingService.create(request.roomId(), authentication.getName(), new BookingPeriod(request.start(), request.end()));
 
     }
+
     @GetMapping("/bookings")
     public Page<BookingResponse> findFilteredBookings(@RequestParam(required = false) Long roomId, @PageableDefault(sort = {"period.start", "id"}) Pageable pageable, @RequestParam(required = false) BookingState state, @RequestParam(required = false) Instant start) {
         return bookingService.list(roomId, pageable, state, start);
@@ -36,11 +37,11 @@ public class BookingController {
 
     @GetMapping("/bookings/stats")
     public List<BookingStats> countBookings() {
-        return  bookingService.countBookings();
+        return bookingService.countBookings();
     }
 
 
-    @PostMapping("/bookings/{id}")
+    @PostMapping("/bookings/{id}/cancel")
     public BookingResponse cancelBooking(@PathVariable Long id, Authentication authentication) {
         return bookingService.cancel(id, authentication.getName());
     }
