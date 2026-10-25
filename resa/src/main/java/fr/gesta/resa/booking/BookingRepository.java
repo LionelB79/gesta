@@ -21,9 +21,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                        @Param("endAt") Instant endAt,
                        @Param("state") BookingState state);
 
-    @EntityGraph(attributePaths = "room")
-    Page<Booking> findAll(Pageable pageable);
-
     @Query("""
             SELECT b FROM Booking b WHERE (:roomId IS NULL OR b.room.id = :roomId)
             AND (:state IS NULL OR b.state = :state)
@@ -36,6 +33,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("state") BookingState state,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = "room")
-    List<Booking> findByState(BookingState state);
+
+    @Query("""
+            SELECT new fr.gesta.resa.booking.BookingStats(r.name, COUNT(b) )
+            FROM Room r
+            LEFT JOIN Booking b ON b.room = r AND b.state = :state
+            GROUP BY r.name
+            ORDER BY r.name
+            """)
+    List<BookingStats> countByRoom(@Param("state") BookingState state);
 }

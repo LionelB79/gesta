@@ -4,19 +4,17 @@ import fr.gesta.resa.exception.*;
 import fr.gesta.resa.room.Room;
 import fr.gesta.resa.room.RoomRepository;
 import org.hibernate.exception.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -34,6 +32,7 @@ public class BookingService {
     }
 
     @Transactional
+    @Retryable(includes = CannotAcquireLockException.class, maxRetries = 2, delay = 50)
     public BookingResponse create(Long roomId, String user, BookingPeriod period) {
 
         Room room = roomRepository.findById(roomId).orElseThrow(RoomNotFoundException::new);
@@ -77,16 +76,7 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<BookingStats> countBookings() {
-
-        Map<String, Long> bookings = bookingRepository.findByState(BookingState.CONFIRMED)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        booking -> booking.getRoom().getName(),
-                        Collectors.counting()));
-
-        return bookings.entrySet().stream()
-                .map(entry -> new BookingStats(entry.getKey(), entry.getValue()))
-                .toList();
+        return bookingRepository.countByRoom(BookingState.CONFIRMED);
     }
 
     @Transactional
