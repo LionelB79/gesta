@@ -22,11 +22,6 @@ class RoomServiceTest {
 
     @Mock
     private RoomRepository roomRepository;
-    @Mock
-    private BookingService bookingService;
-
-    @Mock
-    private BookingRepository bookingRepository;
 
     @Test
     void listReturnsEnabledRoomsMappedToResponseTest() {
