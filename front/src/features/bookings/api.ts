@@ -7,6 +7,9 @@ export function getBookings(page:number, size:number): Promise<Page<BookingRespo
 export function createBooking(request: CreateBookingRequest): Promise<BookingResponse> {
     return apiClient<BookingResponse>("/bookings", { method: "POST", body: JSON.stringify(request) });
 }
+export function cancelBooking(id:number): Promise<BookingResponse> {
+    return apiClient<BookingResponse>(`/bookings/${id}/cancel`, { method: "POST" });
+}
 
 export function getRooms(): Promise<RoomResponse[]> {
     return apiClient<RoomResponse[]>("/rooms");

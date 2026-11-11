@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { BookingResponse, Page, RoomResponse } from "./types";
 import { ApiError } from "../../shared/api/client";
-import { createBooking, getBookings, getRooms } from "./api";
+import { cancelBooking, createBooking, getBookings, getRooms } from "./api";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -14,9 +14,10 @@ export const BookingsPage = () => {
   const [reloadKey, setReloadKey] = useState(0);
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [roomId, setRoomId] = useState<number | null>(null);
+  const { user, logout } = useAuth();
+  const [actionError, setActionError] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const { logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,6 +92,18 @@ export const BookingsPage = () => {
     }
   };
 
+  const handleCancel = async (bookingId: number) => {
+    setActionError("");
+    try {
+      await cancelBooking(bookingId);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setActionError(e.response.message);
+      } else console.error(e);
+    }
+  };
+
   let content;
   if (loading) content = <p>Chargement…</p>;
   else if (error) content = <p>{error}</p>;
@@ -104,6 +117,12 @@ export const BookingsPage = () => {
             {booking.roomName},{" "}
             {new Date(booking.startAt).toLocaleString("fr-FR")},{" "}
             {new Date(booking.endAt).toLocaleString("fr-FR")}, {booking.state}
+            {booking.state === "CONFIRMED" &&
+              booking.user === user?.username && (
+                <button type="button" onClick={() => handleCancel(booking.id)}>
+                  Annuler
+                </button>
+              )}
           </li>
         ))}
       </ul>
@@ -125,6 +144,7 @@ export const BookingsPage = () => {
       <button type="button" onClick={handleLogout}>
         Déconnexion
       </button>
+      {actionError && <p>{actionError}</p>}
       {content}
       {formError && <p>{formError}</p>}
       <form onSubmit={handleSubmit}>
