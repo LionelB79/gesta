@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import type { BookingResponse, Page } from "./types";
+import type { BookingResponse, Page, RoomResponse } from "./types";
 import { ApiError } from "../../shared/api/client";
-import { createBooking, getBookings } from "./api";
+import { createBooking, getBookings, getRooms } from "./api";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +12,8 @@ export const BookingsPage = () => {
   const [bookings, setBookings] = useState<Page<BookingResponse> | null>(null);
   const [pageNumber, setPageNumber] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
-  const [roomId, setRoomId] = useState(1);
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
+  const [roomId, setRoomId] = useState<number | null>(null);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const { logout } = useAuth();
@@ -39,6 +40,22 @@ export const BookingsPage = () => {
     };
   }, [pageNumber, reloadKey]);
 
+  useEffect(() => {
+    let ignore = false;
+    const loadRooms = async () => {
+      try {
+        const data = await getRooms();
+        if (!ignore) setRooms(data);
+      } catch (e) {
+        if (!ignore && e instanceof ApiError) setFormError(e.response.message);
+      }
+    };
+    loadRooms();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const before = () => {
     setPageNumber((p) => p - 1);
   };
@@ -53,13 +70,13 @@ export const BookingsPage = () => {
     } catch (e) {
       if (e instanceof ApiError) {
         setError(e.response.message);
-      }
-      else console.error(e);
+      } else console.error(e);
     }
   };
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
+    if (roomId === null) return;
     setFormError("");
     try {
       await createBooking({
@@ -86,8 +103,7 @@ export const BookingsPage = () => {
           <li key={booking.id}>
             {booking.roomName},{" "}
             {new Date(booking.startAt).toLocaleString("fr-FR")},{" "}
-            {new Date(booking.endAt).toLocaleString("fr-FR")},{" "}
-            {booking.state}
+            {new Date(booking.endAt).toLocaleString("fr-FR")}, {booking.state}
           </li>
         ))}
       </ul>
@@ -113,12 +129,16 @@ export const BookingsPage = () => {
       {formError && <p>{formError}</p>}
       <form onSubmit={handleSubmit}>
         <select
-          value={roomId}
+          value={roomId ?? ""}
           onChange={(e) => setRoomId(Number(e.target.value))}
+          required
         >
-          <option value={1}>demo</option>
-          <option value={2}>mars</option>
-          <option value={3}>saturne</option>
+          <option value="">Choisir une salle</option>
+          {rooms.map((room) => (
+            <option key={room.id} value={room.id}>
+              {room.name} ({room.capacity} places)
+            </option>
+          ))}
         </select>
         <input
           type="datetime-local"
