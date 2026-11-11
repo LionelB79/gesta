@@ -114,7 +114,7 @@ export const BookingsPage = () => {
       <ul>
         {bookings.content.map((booking) => (
           <li key={booking.id}>
-            {booking.roomName},{" "}
+            {booking.roomName} ({booking.user}),{" "}
             {new Date(booking.startAt).toLocaleString("fr-FR")},{" "}
             {new Date(booking.endAt).toLocaleString("fr-FR")}, {booking.state}
             {booking.state === "CONFIRMED" &&
@@ -130,7 +130,7 @@ export const BookingsPage = () => {
 
   return (
     <>
-      <h1>Mes réservations</h1>
+      <h1>Planning des salles</h1>
       <button type="button" onClick={before} disabled={pageNumber === 0}>
         Précédent
       </button>

@@ -5,7 +5,7 @@ import {
   createContext,
   type ReactNode,
 } from "react";
-import { apiClient } from "../api/client";
+import { apiClient, setUnauthenticatedHandler } from "../api/client";
 
 interface User {
   username: string;
@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
- logout: () => Promise<void>;
+  logout: () => Promise<void>;
   loading: boolean;
 }
 
@@ -28,17 +28,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    setUser(user)
-}
-    
+    setUser(user);
+  };
 
-  const logout = async ():Promise<void> => {   
-     await apiClient<void>("/logout", {
+  const logout = async (): Promise<void> => {
+    await apiClient<void>("/logout", {
       method: "POST",
     });
-  setUser(null);}
-     
-
+    setUser(null);
+  };
 
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -55,6 +53,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    setUnauthenticatedHandler(() => setUser(null));
+    return () => setUnauthenticatedHandler(null);
   }, []);
 
   return (

@@ -1,6 +1,12 @@
 import type { ErrorResponse } from "./ErrorResponse";
 const BASE_URL = "/api";
 
+let onUnauthenticated: (() => void) | null = null;
+
+export function setUnauthenticatedHandler(handler: (() => void) | null) {
+  onUnauthenticated = handler;
+}
+
 export class ApiError extends Error {
   response: ErrorResponse;
 
@@ -65,6 +71,9 @@ export async function apiClient<T>(
         // JSON invalide : on garde le repli
       }
     }
+    if (error.code === "UNAUTHENTICATED") {
+  onUnauthenticated?.();
+}
     throw new ApiError(error);
   }
   const text = await response.text();
