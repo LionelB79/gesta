@@ -10,35 +10,37 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.SyntheticEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
+    doLogin(username, password);
+  };
+
+  const handleDemo = () => {
+    doLogin("demo", "demo2026!");
+  };
+
+  const doLogin = async (username: string, password: string) => {
+    setError("");
     try {
       await login(username, password);
       navigate("/bookings");
     } catch (e) {
       if (e instanceof ApiError) {
         setError(e.response.message);
+      } else {
+        setError("Serveur injoignable, réessayez plus tard.");
       }
     }
   };
 
-  const handleDemo = async () => {
-    try {
-      await login("demo", "demo2026!");
-      navigate("/bookings");
-    } catch (e) {
-      if (e instanceof ApiError) {
-        setError(e.response.message);
-      }
-    }
-  };
   return (
     <>
       {error && <p>{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Nom :</label>
+          <label htmlFor="username">Nom :</label>
           <input
+            id="username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -46,8 +48,9 @@ export const LoginPage = () => {
           />
         </div>
         <div>
-          <label>Mot de passe :</label>
+          <label htmlFor="password">Mot de passe :</label>
           <input
+            id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
