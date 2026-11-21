@@ -20,7 +20,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests(
                 auth -> auth
                         .requestMatchers("/actuator/health", "/api/login").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/**").authenticated()
+                        // Tout ce qui n'est pas /api/** est le front (fichiers statiques, routes SPA) : public.
+                        .anyRequest().permitAll()
         );
         http.requestCache(RequestCacheConfigurer::disable);
         http.csrf(
