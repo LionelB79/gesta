@@ -1,0 +1,9 @@
+**/target/
+front/node_modules/
+front/node/
+front/dist/
+.git/
+.idea/
+.vscode/
+*.iml
+.env

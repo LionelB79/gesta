@@ -16,7 +16,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-
+  app:
+    build: .
+    container_name: gesta-app
+    profiles: [ "app" ]
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/gesta
+      DB_USERNAME: gesta
+      DB_PASSWORD: gesta
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
   minio:
     image: minio/minio:latest
     container_name: gesta-minio
@@ -38,13 +51,14 @@ services:
     image: dpage/pgadmin4:latest
     container_name: gesta-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@gesta.local
+      PGADMIN_DEFAULT_EMAIL: admin@gesta.fr
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "5050:80"  #http://localhost:5050
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:
