@@ -72,8 +72,8 @@ export async function apiClient<T>(
       }
     }
     if (error.code === "UNAUTHENTICATED") {
-  onUnauthenticated?.();
-}
+      onUnauthenticated?.();
+    }
     throw new ApiError(error);
   }
   const text = await response.text();
