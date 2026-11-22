@@ -1,5 +1,7 @@
 # Gesta
 
+[![CI](https://github.com/LionelB79/gesta/actions/workflows/ci.yml/badge.svg)](https://github.com/LionelB79/gesta/actions/workflows/ci.yml)
+
 Plateforme modulaire de gestion — réservation de salles, matériel, documents, référentiels — construite comme un **monolithe modulaire** Spring Boot + React.
 
 > **Démo en ligne** : https://gesta-yh66.onrender.com — bouton « Connexion démo » sur la page de connexion (aucune inscription nécessaire).
