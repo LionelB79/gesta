@@ -9,6 +9,7 @@ export const LoginPage = () => {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -21,6 +22,7 @@ export const LoginPage = () => {
 
   const doLogin = async (username: string, password: string) => {
     setError("");
+    setSubmitting(true);
     try {
       await login(username, password);
       navigate("/bookings");
@@ -30,6 +32,8 @@ export const LoginPage = () => {
       } else {
         setError("Serveur injoignable, réessayez plus tard.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -57,10 +61,12 @@ export const LoginPage = () => {
             required
           />
         </div>
-        <button type="button" onClick={handleDemo}>
-          Connexion démo
+        <button type="button" onClick={handleDemo} disabled={submitting}>
+          {submitting ? "Connexion…" : "Connexion démo"}
         </button>{" "}
-        <button type="submit">Se connecter</button>
+        <button type="submit" disabled={submitting}>
+          Se connecter
+        </button>
       </form>
     </>
   );
