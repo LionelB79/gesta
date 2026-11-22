@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# Gesta — front
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Application React 19 + TypeScript (Vite), servie par le back-end Spring Boot en production.
 
-Currently, two official plugins are available:
+## Commandes
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci          # installer les dépendances (versions exactes du package-lock.json)
+npm run dev     # serveur de développement : http://localhost:5173, /api redirigé vers localhost:8080
+npm run lint    # vérification oxlint
+npm run build   # vérification TypeScript, puis build de production dans dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Le back-end doit tourner sur le port 8080 en mode développement (voir le README à la racine).
+En production, `dist/` est copié dans le jar par le build Maven : aucune commande front n'est nécessaire.
+
+## Organisation
+
+- `src/app/` : router
+- `src/shared/` : client HTTP, gestion des erreurs, authentification
+- `src/features/` : un dossier par fonctionnalité (`auth/`, `bookings/`)
+
+Règles : `features` peut importer `shared`, jamais l'inverse ; deux `features` ne s'importent pas entre elles.
