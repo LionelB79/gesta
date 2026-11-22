@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const me = await apiClient<User>("/me");
         setUser(me);
-      } catch (error) {
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
