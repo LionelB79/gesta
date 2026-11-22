@@ -2,7 +2,8 @@
 
 Plateforme modulaire de gestion — réservation de salles, matériel, documents, référentiels — construite comme un **monolithe modulaire** Spring Boot + React.
 
-> **Démo en ligne** : _URL à venir_ — bouton « Connexion démo » sur la page de connexion (aucune inscription nécessaire).
+> **Démo en ligne** : https://gesta-yh66.onrender.com — bouton « Connexion démo » sur la page de connexion (aucune inscription nécessaire).
+> Hébergement gratuit : si l'application était en veille, le premier chargement peut prendre une à deux minutes.
 
 ## Vue d'ensemble
 
@@ -137,12 +138,32 @@ Documentation OpenAPI : prévue.
 
 ## Stack
 
-Java 25 · Spring Boot 4 · Spring Security · JPA/Hibernate · Liquibase · PostgreSQL 18 · Maven multi-module · React 19 + TypeScript + Vite · React Router · JUnit · Mockito · AssertJ · Docker Compose · oxlint
+Java 25 · Spring Boot 4 · Spring Security · JPA/Hibernate · Liquibase · PostgreSQL 18 · Maven multi-module · React 19 + TypeScript + Vite · React Router · JUnit · Mockito · AssertJ · Docker (image multi-étapes) · Docker Compose · oxlint · Render · Neon
 *Prévu : MinIO (API S3), ArchUnit, Spring AI + pgvector (assistant).*
 
 ## Démarrage local
 
-Prérequis : Java 25, Docker, Node.js 22+, Git.
+Prérequis : Java 25, Docker, Git. Node.js 24 uniquement pour le mode développement : le build Maven télécharge sa propre version de Node.
+
+### Mode application (un seul jar, comme en production)
+
+```bash
+docker compose up -d
+./mvnw clean package -pl gesta -am -DskipTests
+java -jar gesta/target/gesta.jar
+```
+
+- Application : http://localhost:8080 — le front React est embarqué dans le jar.
+
+### Mode conteneur (l'image Docker de production, avec le profil `prod`)
+
+```bash
+docker compose --profile app up --build
+```
+
+- Application : http://localhost:8080 — l'image est construite depuis le `Dockerfile`, et se connecte au PostgreSQL du Compose par le nom de service `postgres`.
+
+### Mode développement (rechargement à chaud du front)
 
 ```bash
 # 1. Infrastructure (PostgreSQL, MinIO, pgAdmin)
@@ -158,6 +179,9 @@ npm run dev
 ```
 
 - Application : http://localhost:5173 (le serveur Vite redirige `/api` vers le back sur le port 8080)
+
+### Accès
+
 - Compte de démonstration : `demo` / `demo2026!`
 - pgAdmin : http://localhost:5050 (serveur PostgreSQL : `localhost:5433`, `gesta` / `gesta`)
 
@@ -175,6 +199,34 @@ La base `gesta_test` est créée automatiquement au premier démarrage du conten
 docker exec gesta-postgres psql -U gesta -d gesta -c "CREATE DATABASE gesta_test"
 ```
 
+## Configuration
+
+Aucun secret n'est dans le dépôt. En développement, `application.yml` fournit des valeurs par défaut ; en production (profil `prod`), tout vient de variables d'environnement, sans valeur par défaut : l'application refuse de démarrer s'il en manque une.
+
+| Variable                 | Rôle                                         | Défaut en développement                    |
+|--------------------------|----------------------------------------------|--------------------------------------------|
+| `SPRING_PROFILES_ACTIVE` | active le profil `prod`                      | aucun profil                               |
+| `DB_URL`                 | URL JDBC de PostgreSQL                       | `jdbc:postgresql://localhost:5433/gesta`   |
+| `DB_USERNAME`            | utilisateur PostgreSQL                       | `gesta`                                    |
+| `DB_PASSWORD`            | mot de passe PostgreSQL                      | `gesta`                                    |
+| `PORT`                   | port HTTP (imposé par l'hébergeur)           | `8080`                                     |
+
+Le profil `prod` ajoute : cookie de session `Secure`, prise en compte des en-têtes `X-Forwarded-*` du proxy de l'hébergeur, pool de connexions qui se vide quand l'application est inactive, détails de santé masqués, sonde de vivacité `/actuator/health/liveness`.
+
+## Déploiement
+
+| Élément | Service | Rôle |
+|---|---|---|
+| Application | **Render** (offre gratuite, région Francfort) | construit l'image depuis le `Dockerfile` à chaque push sur `main`, fournit l'URL et le HTTPS |
+| Base de données | **Neon** (PostgreSQL 18 managé, offre gratuite, Francfort) | migrée par Liquibase au démarrage ; se met en veille après 5 minutes d'inactivité |
+| Disponibilité | **UptimeRobot** | appelle la page d'accueil toutes les 5 minutes, pour éviter la mise en veille de Render, et alerte en cas de panne |
+
+Points d'attention :
+
+- **Contrôle de santé Render** sur `/actuator/health/liveness`, qui n'interroge pas la base : sinon Neon ne se mettrait jamais en veille et le quota gratuit serait épuisé.
+- **Mémoire** : 512 Mo, d'où `-XX:MaxRAMPercentage=75` dans le `Dockerfile`.
+- **Démarrage** : environ deux minutes sur 0,1 CPU.
+
 ## Décisions d'architecture
 
 | #  | Décision | Alternative écartée | Pourquoi |
@@ -189,9 +241,14 @@ docker exec gesta-postgres psql -U gesta -d gesta -c "CREATE DATABASE gesta_test
 | 8  | Annulation logique, action `POST /bookings/{id}/cancel` | `DELETE` physique, `PATCH` de l'état | Historique, audit et statistiques conservés ; une transition gouvernée par des règles métier s'expose comme une action explicite |
 | 9  | Planning partagé, actions réservées au propriétaire | Ne montrer que ses propres réservations | Pour choisir un créneau, il faut voir l'occupation des salles |
 | 10 | Base de test dédiée, migrée par Liquibase | Tests sur la base de dev | Les tests ne détruisent pas les données de développement et ne dépendent pas d'un lancement préalable de l'application |
+| 11 | Front construit par Maven (`frontend-maven-plugin`, Node téléchargé par le build) | Build du front séparé, à la main ou en CI | Un seul `./mvnw package` produit le livrable complet, avec une version de Node identique sur toutes les machines |
+| 12 | Sécurité par préfixe : `/api/**` authentifié, le reste (front) public, repli SPA vers `index.html` hors `/api` | Lister chaque route du front côté serveur | Le serveur n'a pas à connaître les routes React ; contrepartie : toute route d'API doit commencer par `/api` |
+| 13 | Configuration par variables d'environnement, profil `prod` sans valeur par défaut | Secrets dans `application-prod.yml` | Un secret commité reste dans l'historique Git et finit dans le jar et l'image ; sans variable, l'application refuse de démarrer |
+| 14 | Image Docker multi-étapes, exécutée par un utilisateur non `root` | Image unique avec JDK et outils de build | Image finale plus légère, sans code source ni outils ; surface d'attaque réduite |
+| 15 | Hébergement Render (application) + Neon (PostgreSQL), à 0 € | VM Oracle Cloud gratuite ; base PostgreSQL gratuite de Render | Mise en ligne rapide sans administrer de serveur ; la base de Render expire après 30 jours, celle de Neon n'a pas de limite de durée |
 
 ## Roadmap
 
-- **v1 (en cours)** : `gesta` + `resa` ✅ — reste : mise en ligne (jar unique avec le front embarqué), intégration continue (GitHub Actions), documentation OpenAPI, tests de slice (`@WebMvcTest`, `@DataJpaTest`), règles ArchUnit
+- **v1 (en cours)** : `gesta` + `resa` ✅, jar unique avec le front embarqué ✅, image Docker et mise en ligne ✅ — reste : réinitialisation automatique des données de démo, intégration continue (GitHub Actions), documentation OpenAPI, tests de slice (`@WebMvcTest`, `@DataJpaTest`), règles ArchUnit
 - **Ensuite** : `materio`, puis `odito` + `stocko`, puis `ref` et `staff`
 - **Enfin** : assistant — Spring AI + pgvector sur le PostgreSQL existant
