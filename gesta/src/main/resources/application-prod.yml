@@ -3,10 +3,20 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 0
+      idle-timeout: 60000
   jpa:
     properties:
       hibernate:
         format_sql: false
+
+server:
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        secure: true
 
 management:
   endpoint:
