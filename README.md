@@ -140,7 +140,7 @@ Documentation OpenAPI : prévue.
 
 ## Stack
 
-Java 25 · Spring Boot 4 · Spring Security · JPA/Hibernate · Liquibase · PostgreSQL 18 · Maven multi-module · React 19 + TypeScript + Vite · React Router · JUnit · Mockito · AssertJ · Docker (image multi-étapes) · Docker Compose · oxlint · Render · Neon
+Java 25 · Spring Boot 4 · Spring Security · JPA/Hibernate · Liquibase · PostgreSQL 18 · Maven multi-module · React 19 + TypeScript + Vite · React Router · JUnit · Mockito · AssertJ · Docker (image multi-étapes) · Docker Compose · oxlint · GitHub Actions · Render · Neon
 *Prévu : MinIO (API S3), ArchUnit, Spring AI + pgvector (assistant).*
 
 ## Démarrage local
@@ -201,6 +201,8 @@ La base `gesta_test` est créée automatiquement au premier démarrage du conten
 docker exec gesta-postgres psql -U gesta -d gesta -c "CREATE DATABASE gesta_test"
 ```
 
+Les mêmes tests tournent en **intégration continue** (GitHub Actions, `.github/workflows/ci.yml`) à chaque push et pull request sur `main`, avec un PostgreSQL 18 démarré pour l'occasion ; le front y est vérifié par le lint et le build. Render ne déploie que si la CI est verte.
+
 ## Configuration
 
 Aucun secret n'est dans le dépôt. En développement, `application.yml` fournit des valeurs par défaut ; en production (profil `prod`), tout vient de variables d'environnement, sans valeur par défaut : l'application refuse de démarrer s'il en manque une.
@@ -222,6 +224,7 @@ Le profil `prod` ajoute : cookie de session `Secure`, prise en compte des en-tê
 | Application | **Render** (offre gratuite, région Francfort) | construit l'image depuis le `Dockerfile` à chaque push sur `main`, fournit l'URL et le HTTPS |
 | Base de données | **Neon** (PostgreSQL 18 managé, offre gratuite, Francfort) | migrée par Liquibase au démarrage ; se met en veille après 5 minutes d'inactivité |
 | Disponibilité | **UptimeRobot** | appelle la page d'accueil toutes les 5 minutes, pour éviter la mise en veille de Render, et alerte en cas de panne |
+| Intégration continue | **GitHub Actions** | build et tests à chaque push ; Render ne déploie qu'après une CI verte (« After CI Checks Pass ») |
 
 Points d'attention :
 
@@ -248,9 +251,10 @@ Points d'attention :
 | 13 | Configuration par variables d'environnement, profil `prod` sans valeur par défaut | Secrets dans `application-prod.yml` | Un secret commité reste dans l'historique Git et finit dans le jar et l'image ; sans variable, l'application refuse de démarrer |
 | 14 | Image Docker multi-étapes, exécutée par un utilisateur non `root` | Image unique avec JDK et outils de build | Image finale plus légère, sans code source ni outils ; surface d'attaque réduite |
 | 15 | Hébergement Render (application) + Neon (PostgreSQL), à 0 € | VM Oracle Cloud gratuite ; base PostgreSQL gratuite de Render | Mise en ligne rapide sans administrer de serveur ; la base de Render expire après 30 jours, celle de Neon n'a pas de limite de durée |
+| 16 | CI GitHub Actions avec un vrai PostgreSQL en service, déploiement conditionné à la CI verte | Tests sur base en mémoire (H2) ; déploiement à chaque commit | La contrainte d'exclusion et le comportement concurrent n'existent que sur PostgreSQL ; aucun code rouge ne part en production |
 
 ## Roadmap
 
-- **v1 (en cours)** : `gesta` + `resa` ✅, jar unique avec le front embarqué ✅, image Docker et mise en ligne ✅ — reste : réinitialisation automatique des données de démo, intégration continue (GitHub Actions), documentation OpenAPI, tests de slice (`@WebMvcTest`, `@DataJpaTest`), règles ArchUnit
+- **v1 (en cours)** : `gesta` + `resa` ✅, jar unique avec le front embarqué ✅, image Docker et mise en ligne ✅, intégration continue ✅ — reste : interface de planning type agenda, documentation OpenAPI, tests de slice (`@WebMvcTest`, `@DataJpaTest`), règles ArchUnit, réinitialisation automatique des données de démo
 - **Ensuite** : `materio`, puis `odito` + `stocko`, puis `ref` et `staff`
 - **Enfin** : assistant — Spring AI + pgvector sur le PostgreSQL existant
