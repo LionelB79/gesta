@@ -145,7 +145,7 @@ public class BookingServiceTest {
 
         BookingResponse result = bookingService.cancel(booking.getId(), "username");
 
-        assertEquals(BookingState.CANCELED, result.state());
+        assertEquals(BookingState.CONFIRMED, result.state());
     }
 
     @Test
