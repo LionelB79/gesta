@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static fr.gesta.resa.ErrorConst.*;
+import static fr.gesta.resa.TestDates.paris;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,8 +43,8 @@ public class BookingServiceTest {
     @Test
     void createBookingTest() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
 
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
@@ -60,8 +61,8 @@ public class BookingServiceTest {
     @Test
     void createBookingTestReturnNotFound() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
 
         when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
@@ -76,8 +77,8 @@ public class BookingServiceTest {
     @Test
     void createBookingTestReturnConflict() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
 
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
@@ -95,8 +96,8 @@ public class BookingServiceTest {
     void listTest() {
         Long roomId = 1L;
         BookingState state = BookingState.CONFIRMED;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setName("room1");
         Pageable pageable = PageRequest.of(0, 10);
@@ -121,7 +122,7 @@ public class BookingServiceTest {
     @Test
     void listTestWithEmptyList() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
         BookingState state = BookingState.CONFIRMED;
         Pageable pageable = PageRequest.of(0, 10);
 
@@ -133,8 +134,8 @@ public class BookingServiceTest {
 
     @Test
     void cancelTestWithBooking() {
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setName("room1");
 
@@ -150,8 +151,8 @@ public class BookingServiceTest {
 
     @Test
     void cancelTestReturnNotFound() {
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setName("room1");
 
@@ -169,8 +170,8 @@ public class BookingServiceTest {
 
     @Test
     void cancelTestReturnForbidden() {
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setName("room1");
 
@@ -188,8 +189,8 @@ public class BookingServiceTest {
 
     @Test
     void cancelRejectsAlreadyCanceledBooking() {
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setName("room1");
 
@@ -221,8 +222,8 @@ public class BookingServiceTest {
     @Test
     void createTranslatesOverlapConstraintViolationTest() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(new Room()));
         when(bookingRepository.hasOverlap(roomId, start, end, BookingState.CONFIRMED)).thenReturn(false);
         when(bookingRepository.saveAndFlush(any(Booking.class))).thenThrow(
@@ -236,8 +237,8 @@ public class BookingServiceTest {
     @Test
     void createRethrowsOtherIntegrityViolationsTest() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         DataIntegrityViolationException fkViolation = new DataIntegrityViolationException("fk",
                 new ConstraintViolationException("fk", new SQLException("fk", "23503"), "fk_bookings_room"));
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(new Room()));
@@ -251,8 +252,8 @@ public class BookingServiceTest {
     @Test
     void createRejectsDisabledRoomTest() {
         Long roomId = 1L;
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         Room room = new Room();
         room.setEnabled(false);
         when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
@@ -263,4 +264,20 @@ public class BookingServiceTest {
 
         verifyNoInteractions(bookingRepository);
     }
+
+    @Test
+    void createRejectsOutsideOpeningHoursTest() {
+        Long roomId = 1L;
+        Instant start = paris(11, 24, 18, 0);
+        Instant end = paris(11, 24, 20, 0);
+        Room room = new Room();
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+
+        assertThatThrownBy(() -> bookingService.create(roomId, "username", new BookingPeriod(start, end)))
+                .isInstanceOf(OutsideOpeningHoursException.class)
+                .hasFieldOrPropertyWithValue("code", OUTSIDE_OPENING_HOURS);
+
+        verifyNoInteractions(bookingRepository);
+    }
+
 }

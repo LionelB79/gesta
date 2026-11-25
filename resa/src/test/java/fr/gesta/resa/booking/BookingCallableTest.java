@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static fr.gesta.resa.ErrorConst.OVERLAP_ERROR;
+import static fr.gesta.resa.TestDates.paris;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = TestApplication.class)
@@ -35,7 +36,7 @@ class BookingCallableTest {
     @Test
     void concurrentCreationsOnSameSlotOnlyOneSucceeds() throws InterruptedException {
         Long roomId = roomRepository.findByName("demo").orElseThrow().getId();
-        Instant start = Instant.now().plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
         BookingPeriod period = new BookingPeriod(start, start.plusSeconds(3600));
         CountDownLatch latch = new CountDownLatch(1);
 

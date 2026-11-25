@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 
 import static fr.gesta.resa.ErrorConst.TIMING_ERROR;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class BookingPeriodTest {
 

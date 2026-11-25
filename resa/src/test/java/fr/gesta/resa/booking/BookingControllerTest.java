@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 
 import java.time.Instant;
 
+import static fr.gesta.resa.TestDates.paris;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -26,8 +27,8 @@ public class BookingControllerTest {
     public void createBookingTest() {
         Long roomId = 1L;
         String userName = "test";
-        Instant start = Instant.now().plusSeconds(3600);
-        Instant end = start.plusSeconds(3600);
+        Instant start = paris(11, 24, 10, 0);
+        Instant end = paris(11, 24, 11, 0);
         String roomName = "test";
         BookingState state = BookingState.CONFIRMED;
 
