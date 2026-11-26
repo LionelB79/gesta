@@ -11,4 +11,5 @@ public final class ErrorConst {
     public static final String FORBIDDEN_BOOKING = "FORBIDDEN_BOOKING";
     public static final String ALREADY_CANCELED = "ALREADY_CANCELED";
     public static final String ROOM_DISABLED = "ROOM_DISABLED";
+    public static final String OUTSIDE_OPENING_HOURS = "OUTSIDE_OPENING_HOURS";
 }

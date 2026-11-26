@@ -39,6 +39,7 @@ public class BookingService {
         if (!room.isEnabled()) {
             throw new RoomDisabledException();
         }
+        OpeningHours.check(period.start(), period.end());
 
         if (bookingRepository.hasOverlap(roomId, period.start(), period.end(), BookingState.CONFIRMED)) {
             throw new BookingOverlapException();
